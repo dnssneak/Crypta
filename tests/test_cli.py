@@ -98,9 +98,12 @@ class TestCryptaCLI(unittest.TestCase):
                         or "extracted" in output
                         or "embedded" in output
                         or "recovered" in output
-                        or "detected" in output,
+                        or "detected" in output
+                        or "collected" in output
+                        or "forensic" in output.lower(),
                         f"Unexpected output for {cmd}: {output}",
                     )
+
                 finally:
                     sys.stdout = sys.__stdout__
         finally:

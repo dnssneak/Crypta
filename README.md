@@ -1,7 +1,7 @@
 # Crypta — Steganography, Cryptography & Steganalysis Toolkit
 
 **Version:** 1.0.0  
-**Status:** In Development (Feature 6 Complete)  
+**Status:** In Development (Feature 7 Complete)  
 **Primary Platform:** Kali Linux  
 **Supported Platforms:** Linux & Windows Terminal  
 **Language:** Python 3  
@@ -13,6 +13,7 @@
 **Crypta** is a command-line cybersecurity toolkit designed to securely hide sensitive payload files inside digital PNG images and conduct statistical steganalysis on suspicious media files.
 
 Crypta integrates:
+* **Forensics Engine (Feature 7):** Read-only evidence collection (`crypta info <image>`) extracting SHA-256 file fingerprints, filesystem metadata, actual format detection vs extension mismatch verification, PNG binary IHDR chunk structure, and safe text/EXIF metadata decoding.
 * **Steganalysis Engine (Feature 6):** Comprehensive analytical pipeline (`crypta/steganalysis/`) evaluating Shannon entropy, LSB 0/1 distributions, Pairs of Values Chi-Square test statistics, histogram frequency pairing, and spatial pixel transition dynamics.
 * **Secure Pipeline Core (Feature 5):** Orchestrated hide/extract workflow (`crypta/core/pipeline.py`) featuring transactional atomic output creation, capacity fit check, SHA-256 plaintext integrity validation, path traversal filename sanitization, and output collision checks.
 * **Core Cryptography Layer (Feature 4):** AES-256-GCM authenticated encryption with SHA-256 integrity digest and Argon2id password-based key derivation.
@@ -22,7 +23,24 @@ Crypta integrates:
 
 ---
 
-## 2. Steganalysis Engine
+## 2. Forensics & Evidence Collection
+
+Crypta includes a read-only forensic inspection engine (`crypta info <image_path>`) to collect reliable digital evidence:
+
+* **SHA-256 File Fingerprinting:** 64 KB chunked, memory-efficient SHA-256 hash calculation.
+* **File & Format Verification:** File size, modification timestamps, actual format detection (Pillow header check), and extension vs format consistency verification (detecting files like JPEG renamed to `.png`).
+* **Image Properties:** Dimensions, color mode, channel counts, and bit depth.
+* **PNG Structural Analysis:** Signature validation, color type descriptions (Grayscale, Truecolor, Indexed, RGBA), compression method, filter method, and interlace method parsed directly from binary IHDR headers.
+* **Metadata Extraction:** Embedded PNG textual metadata (`tEXt`/`zTXt`/`iTXt`) and EXIF tags, with terminal escape code sanitization.
+
+> Forensic metadata is informational evidence and should be interpreted in context. Filesystem timestamps and embedded metadata are not inherently proof of when or how an image was created.
+
+Forensic analysis is strictly **read-only** and guarantees original file immutability.
+
+---
+
+## 3. Steganalysis Engine
+
 
 Crypta includes a statistical steganalysis engine (`crypta analyze <image_path>`) to evaluate PNG carrier images (RGB and RGBA) for statistical indicators associated with LSB steganography:
 
@@ -160,6 +178,9 @@ python -m crypta capacity cover.png
 - [x] **Feature 4:** Core Cryptography Pipeline (Argon2id + AES-256-GCM Payload Encryption)
 - [x] **Feature 5:** Secure Hide/Extract Orchestration Pipeline
 - [x] **Feature 6:** Steganalysis Engine (Entropy, LSB, Chi-Square, Histogram, Pixel Statistics)
-- [ ] **Feature 7:** Forensic Report Generation Engine (HTML/JSON)
+- [x] **Feature 7:** Forensics & Evidence Collection Engine (`crypta info`, SHA-256, PNG IHDR, Metadata)
+- [ ] **Feature 8:** Steganalysis Risk Engine (0-100 Risk Score)
+- [ ] **Feature 9:** Forensic Report Generation Engine (HTML/JSON)
+
 
 

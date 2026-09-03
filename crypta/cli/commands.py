@@ -23,6 +23,8 @@ from crypta.core import (
 )
 from crypta.cryptography import CryptaError, AuthenticationError, DecryptionError, EncryptionError
 from crypta.steganalysis import analyze_image
+from crypta.forensics import analyze_forensics
+
 
 
 
@@ -258,10 +260,88 @@ def handle_capacity(args: Namespace) -> int:
 
 def handle_info(args: Namespace) -> int:
     """Handler for the 'info' command."""
-    print(info("Info command initialized."))
-    if hasattr(args, "image") and args.image:
-        print(muted(f"    Target file: {args.image}"))
-    print(warning("File and metadata forensic inspection will be implemented in Feature 5."))
+    if not hasattr(args, "image") or not args.image:
+        print(error("Missing required argument: image path to inspect."))
+        print(muted("Usage: crypta info <image_path>"))
+        return 1
+
+    image_path = args.image
+    print(info("Analyzing image..."))
+    print()
+
+    try:
+        res = analyze_forensics(image_path)
+    except FileNotFoundError as err:
+        print(error(f"Target file not found: {image_path}"))
+        return 1
+    except ValueError as err:
+        print(error(str(err)))
+        return 1
+    except Exception as err:
+        print(error("Unable to analyze image."))
+        print(muted(f"Diagnostic error: {err}"))
+        return 1
+
+    f = res.file
+    fmt = res.format
+    img = res.image
+    png = res.png_structure
+    meta = res.metadata
+
+    print(heading("File"))
+    print(heading("────────────────────────────────"))
+    print(f"  Name            : {f.file_name}")
+    print(f"  Format          : {fmt.detected_format}")
+    match_str = "YES" if fmt.extension_match else "NO (MISMATCH DETECTED)"
+    if fmt.extension_match:
+        print(f"  Extension Match : {match_str}")
+    else:
+        print(f"  Extension Match : {warning(match_str)}")
+    print(f"  Size            : {f.size_human}")
+
+    print(f"  SHA-256         : {f.sha256_hash}")
+    print(f"  Modified Time   : {f.modified_time}")
+    print()
+
+    print(heading("Image"))
+    print(heading("────────────────────────────────"))
+    print(f"  Dimensions      : {img.dimensions_str}")
+    print(f"  Mode            : {img.mode}")
+    print(f"  Channels        : {img.channels}")
+    if img.bits_per_channel:
+        print(f"  Bit Depth       : {img.bits_per_channel}")
+    print()
+
+    if png:
+        print(heading("PNG Structure"))
+        print(heading("────────────────────────────────"))
+        sig_str = "Valid" if png.signature_valid else "Invalid"
+        print(f"  Signature       : {sig_str}")
+        print(f"  Color Type      : {png.color_type_desc}")
+        print(f"  Compression     : {png.compression_method}")
+        print(f"  Filter Method   : {png.filter_method}")
+        print(f"  Interlace       : {png.interlace_method}")
+        print()
+
+    print(heading("Metadata"))
+    print(heading("────────────────────────────────"))
+    exif_str = f"Present ({len(meta.exif_tags)} tags)" if meta.exif_present else "Not present"
+    print(f"  EXIF            : {exif_str}")
+    text_str = f"{meta.text_entry_count} entries" if meta.text_entry_count > 0 else "None"
+    print(f"  Text Metadata   : {text_str}")
+
+    if meta.text_metadata:
+        for k, v in meta.text_metadata.items():
+            v_disp = v[:80] + "..." if len(v) > 80 else v
+            print(f"    - {k:<14} : {v_disp}")
+    print()
+
+    if res.warnings:
+        for w in res.warnings:
+            print(warning(w))
+        print()
+
+    print(success("Forensic information collected successfully"))
     return 0
 
 
@@ -271,6 +351,7 @@ def handle_analyze(args: Namespace) -> int:
         print(error("Missing required argument: image path to analyze."))
         print(muted("Usage: crypta analyze <image_path> [--visualize]"))
         return 1
+
 
     image_path = args.image
     do_visualize = getattr(args, "visualize", False)
