@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crypta"
+version = "1.0.0"
+description = "Steganography, Cryptography & Steganalysis Toolkit"
+readme = "README.md"
+authors = [{ name = "Crypta Security Team" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "Pillow>=10.0.0",
+    "cryptography>=41.0.0",
+    "argon2-cffi>=23.1.0",
+]
+
+[project.scripts]
+crypta = "crypta.cli.interface:main"
