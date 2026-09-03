@@ -1,187 +1,167 @@
-# Crypta — Steganography, Cryptography & Steganalysis Toolkit
+# Crypta — Cybersecurity Steganography, Cryptography & Steganalysis Toolkit
 
-**Version:** 1.0.0  
-**Status:** In Development (Feature 7 Complete)  
-**Primary Platform:** Kali Linux  
-**Supported Platforms:** Linux & Windows Terminal  
-**Language:** Python 3  
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey.svg)]()
+[![Status](https://img.shields.io/badge/status-Active%20Development-success.svg)]()
 
----
+**Crypta** is an advanced, cross-platform Python cybersecurity CLI toolkit designed for secure **steganographic payload hiding**, **authenticated encryption**, **digital image forensics**, and **statistical steganalysis**.
 
-## 1. Project Overview
-
-**Crypta** is a command-line cybersecurity toolkit designed to securely hide sensitive payload files inside digital PNG images and conduct statistical steganalysis on suspicious media files.
-
-Crypta integrates:
-* **Forensics Engine (Feature 7):** Read-only evidence collection (`crypta info <image>`) extracting SHA-256 file fingerprints, filesystem metadata, actual format detection vs extension mismatch verification, PNG binary IHDR chunk structure, and safe text/EXIF metadata decoding.
-* **Steganalysis Engine (Feature 6):** Comprehensive analytical pipeline (`crypta/steganalysis/`) evaluating Shannon entropy, LSB 0/1 distributions, Pairs of Values Chi-Square test statistics, histogram frequency pairing, and spatial pixel transition dynamics.
-* **Secure Pipeline Core (Feature 5):** Orchestrated hide/extract workflow (`crypta/core/pipeline.py`) featuring transactional atomic output creation, capacity fit check, SHA-256 plaintext integrity validation, path traversal filename sanitization, and output collision checks.
-* **Core Cryptography Layer (Feature 4):** AES-256-GCM authenticated encryption with SHA-256 integrity digest and Argon2id password-based key derivation.
-* **LSB Steganography (Feature 3):** Spatial-domain 1-bit-per-channel LSB embedding and extraction for PNG carrier images (RGB and RGBA with Alpha channel preservation).
-* **Integrity & Capacity Engine (Feature 2):** PNG carrier validation, image integrity check (`img.verify()`), color channel inspection, and capacity fit enforcement.
-* **CLI Foundation & Interactive Shell (Feature 1):** Command-line routing with global options, `--no-color` toggles, verbose logging, interactive REPL shell (`crypta>`), and secure interactive password prompts (`getpass`).
+Whether hiding encrypted sensitive data inside carrier images or inspecting suspicious media files for hidden payloads, Crypta provides a complete end-to-end framework with both standalone CLI commands and an interactive REPL shell (`crypta>`).
 
 ---
 
-## 2. Forensics & Evidence Collection
+## Key Features
 
-Crypta includes a read-only forensic inspection engine (`crypta info <image_path>`) to collect reliable digital evidence:
-
-* **SHA-256 File Fingerprinting:** 64 KB chunked, memory-efficient SHA-256 hash calculation.
-* **File & Format Verification:** File size, modification timestamps, actual format detection (Pillow header check), and extension vs format consistency verification (detecting files like JPEG renamed to `.png`).
-* **Image Properties:** Dimensions, color mode, channel counts, and bit depth.
-* **PNG Structural Analysis:** Signature validation, color type descriptions (Grayscale, Truecolor, Indexed, RGBA), compression method, filter method, and interlace method parsed directly from binary IHDR headers.
-* **Metadata Extraction:** Embedded PNG textual metadata (`tEXt`/`zTXt`/`iTXt`) and EXIF tags, with terminal escape code sanitization.
-
-> Forensic metadata is informational evidence and should be interpreted in context. Filesystem timestamps and embedded metadata are not inherently proof of when or how an image was created.
-
-Forensic analysis is strictly **read-only** and guarantees original file immutability.
+* **Authenticated Encryption (AES-256-GCM + Argon2id):** Protects payload confidentiality and authenticity using 256-bit AES-GCM encryption with 128-bit authentication tags, Argon2id key derivation, and cryptographically secure 16-byte salts and 12-byte nonces.
+* **PNG LSB Steganography Engine:** Embeds encrypted data frames into 1-bit-per-channel Least Significant Bits (LSBs) of PNG images with complete Alpha channel preservation and zero loss of visual image quality.
+* **Steganalysis Risk Engine:** Computes a normalized **0–100 steganography risk score** using 5 weighted statistical sub-engines (LSB distribution, Chi-Square PoV testing, Histogram ratios, Shannon entropy, and spatial pixel transitions).
+* **Forensic Evidence Collection:** Conducts read-only evidence gathering (`crypta info`), extracting SHA-256 file digests, PNG binary IHDR chunk headers, metadata tags, and file format vs. extension consistency checks.
+* **Standalone Reporting Engine:** Generates self-contained, offline **HTML reports** (with zero external CDN dependencies) and machine-readable **JSON exports** for SIEM and incident response workflows.
+* **Interactive REPL Shell:** Includes a built-in interactive shell (`crypta>`) with command history, auto-formatting, and colored terminal styling.
 
 ---
 
-## 3. Steganalysis Engine
+## Installation & Setup
 
+### Prerequisites
 
-Crypta includes a statistical steganalysis engine (`crypta analyze <image_path>`) to evaluate PNG carrier images (RGB and RGBA) for statistical indicators associated with LSB steganography:
+* **Python 3.10+** (Python 3.10, 3.11, 3.12, 3.13, or 3.14)
+* **git** and **pip** package manager
 
-* **Entropy Analysis:** Global and per-channel Shannon entropy calculation ($0.0 \le H \le 8.0$).
-* **LSB Distribution Analysis:** Bitwise 0-bit vs 1-bit counts, percentages, and absolute percentage deviation from ideal 50/50 balance.
-* **Chi-Square Analysis:** Pairs of Values (PoVs $2k$ vs $2k+1$) Chi-Square test statistic, degrees of freedom, and p-value derivation.
-* **Histogram Analysis:** Intensity bounds (min/max), mean, median, standard deviation, and adjacent pair differential ratios.
-* **Pixel Statistics:** Unique value counts per channel and spatial raster LSB transition frequency.
-
-These metrics represent **heuristic statistical indicators**.
-
-> Steganalysis cannot guarantee detection of hidden information from these metrics alone. Natural image characteristics can produce similar statistical patterns, so the results should be interpreted as indicators rather than proof.
-
-Optional visual chart generation is supported:
-```bash
-crypta analyze suspicious.png --visualize
-```
-
----
-
-## 4. Steganalysis Risk Engine
-
-Crypta combines several statistical indicators from Feature 6 into an explainable, deterministic **0–100 steganography risk score** (`crypta analyze <image>`):
-
-* **LSB Distribution (30% weight)**: Evaluates 0/1 bit balance and deviation from 50% ideal random state.
-* **Chi-Square (30% weight)**: Evaluates Pairs of Values (PoV) p-value for LSB replacement testing.
-* **Histogram (20% weight)**: Evaluates adjacent intensity pair ratios for PoV flattening.
-* **Entropy (10% weight)**: Evaluates Shannon entropy per channel and channel-to-channel variance.
-* **Pixel Statistics (10% weight)**: Evaluates LSB transition frequency alignment near 0.50.
-
-### Risk Level Classifications
-```text
- 0–29   : LOW
-30–59   : MODERATE
-60–79   : HIGH
-80–100  : VERY HIGH
-```
-
-> [!IMPORTANT]
-> **Heuristic Assessment Disclaimer:**
-> The Crypta risk score is a heuristic statistical assessment. A high score indicates that multiple observed characteristics are statistically consistent with steganographic modification, but it does **not** prove that hidden information exists.
-
----
-
-## 5. Forensic Report Generation Engine
-
-Crypta generates standalone **HTML** and machine-readable **JSON** forensic reports (`crypta report <image>`):
-
-* **Standalone HTML Reports:** Self-contained single-file HTML report with embedded CSS styling. Requires no external dependencies, web servers, or internet connection (100% offline).
-* **JSON Reports:** Structured, indented JSON export (`indent=2`) for programmatic SIEM, incident response, or automated analysis pipelines.
-* **XSS & Injection Protection:** Strict HTML escaping (`html.escape`) applied to all image metadata, filenames, paths, and observation strings.
-* **Unified Evidence View:** Consolidates Forensic evidence (Feature 7), Steganalysis metrics (Feature 6), and Risk Assessment (Feature 8) with prominent risk gauges and progress bars.
+### Step 1: Clone the Repository
 
 ```bash
-# Generate both HTML and JSON reports by default
-crypta report suspicious.png
-
-# Generate specific format to custom output directory
-crypta report suspicious.png --format html --output-dir /path/to/reports/
+git clone https://github.com/dnssneak/Crypta.git
+cd Crypta
 ```
 
+### Step 2: Create a Virtual Environment (Recommended)
 
-
----
-
-## 3. Pipeline & Security Architecture
-
-
-### Hide Pipeline Architecture
-```text
-Secret Input File
-       ↓
-Validate Carrier PNG Image
-       ↓
-Read Binary Data & Calculate SHA-256
-       ↓
-Derive 256-bit Key (Argon2id + Random 16B Salt)
-       ↓
-Encrypt Payload (AES-256-GCM + Random 12B Nonce)
-       ↓
-Construct Crypta Version 2 Binary Payload Frame
-       ↓
-Check Exact Serialized Size against Usable Capacity
-       ↓
-Embed Bitstream into Carrier Image LSBs
-       ↓
-Atomic Write to Output Stego PNG Image
+**Linux / macOS / Kali Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-### Extract Pipeline Architecture
-```text
-Stego PNG Image
-       ↓
-Validate Stego Carrier
-       ↓
-Extract Bitstream from Image LSBs
-       ↓
-Validate Crypta Header & Version 2 Payload Frame
-       ↓
-Unpack Salt, Nonce, Filename & Ciphertext
-       ↓
-Derive Key & Decrypt Payload (AES-256-GCM)
-       ↓
-Verify AES-GCM Tag & Embedded SHA-256 Digest
-       ↓
-Sanitize Filename & Output Path Resolution
-       ↓
-Atomic Write Recovered Secret Payload File
-```
-
-### Security & Integrity Controls
-* **Confidentiality:** Payload data is unreadable without the correct secret password.
-* **Authenticity & Integrity:** Built-in AES-GCM 128-bit authentication tag combined with embedded SHA-256 digest guarantees that tampered ciphertext or wrong passwords trigger a controlled authentication failure.
-* **Transactional Safety:** Output files are created atomically. If decryption or integrity verification fails, no partial or corrupted file is written to disk.
-* **Carrier Immutability:** Original carrier images are strictly read-only and preserved untouched.
-
-> [!WARNING]
-> **Steganography vs. Encryption Security Distinction:**
-> - **Steganography** hides the *existence* and location of hidden data within a carrier file.
-> - **Encryption** protects the *confidentiality* and *authenticity* of the payload data.
-> - **Crypta's security** depends on the strength and secrecy of the user's password. A weak password reduces the practical security of the encrypted payload.
-
----
-
-## 3. CLI & Interactive Shell Usage
-
-### Standalone CLI Commands
-
+**Windows (PowerShell):**
 ```powershell
-python -m crypta hide cover.png secret.pdf stego.png
-# Prompts for Password & Confirm password securely
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
 
-python -m crypta extract stego.png -o recovered/
-# Prompts for Password securely
+### Step 3: Install Dependencies
 
+Install all required Python packages (Pillow, PyCryptodome, Argon2-cffi, NumPy, Matplotlib):
+
+```bash
+pip install -r requirements.txt
+```
+
+*(Optional)* Install Crypta in editable development mode so `crypta` becomes available directly as a system command:
+
+```bash
+pip install -e .
+```
+
+---
+
+## Quick Start & Usage Guide
+
+Crypta can be executed either via standard module syntax (`python -m crypta <command>`) or directly as `crypta <command>` (if installed via pip).
+
+### 1. Hide an Encrypted Payload inside an Image (`hide`)
+
+Encrypt a secret file and hide it inside a cover PNG carrier image:
+
+```bash
+python -m crypta hide cover.png secret.pdf stego_output.png
+```
+> **Security Note:** You will be prompted securely for a encryption password.
+
+### 2. Extract and Decrypt a Hidden Payload (`extract`)
+
+Extract and decrypt the hidden file from a stego PNG image:
+
+```bash
+python -m crypta extract stego_output.png -o recovered_secret.pdf
+```
+> **Security Note:** Enter the password used during embedding. Crypta automatically verifies AES-GCM tags and SHA-256 digests before writing the extracted file.
+
+### 3. Perform Steganalysis & Risk Assessment (`analyze`)
+
+Analyze an image for statistical indicators of LSB steganography:
+
+```bash
+python -m crypta analyze suspicious.png
+```
+
+Generate visual statistical chart figures alongside the analysis:
+```bash
+python -m crypta analyze suspicious.png --visualize
+```
+
+### 4. Forensic Evidence Collection (`info`)
+
+Inspect file fingerprints, PNG chunk headers, EXIF/text metadata, and format consistency:
+
+```bash
+python -m crypta info image.png
+```
+
+### 5. Generate Standalone HTML & JSON Reports (`report`)
+
+Generate standalone HTML and machine-readable JSON forensic reports:
+
+```bash
+# Generate both HTML and JSON reports in reports/ directory
+python -m crypta report suspicious.png
+
+# Generate only HTML report in a specific output directory
+python -m crypta report suspicious.png --format html --output /path/to/output_dir/
+```
+
+### 6. Calculate Carrier Hiding Capacity (`capacity`)
+
+Check the maximum embeddable secret payload size for a PNG image:
+
+```bash
 python -m crypta capacity cover.png
 ```
 
+### 7. Interactive REPL Shell Mode
+
+Launch Crypta's interactive shell by executing without arguments:
+
+```bash
+python -m crypta
+```
+```text
+crypta> capacity cover.png
+crypta> analyze suspicious.png
+crypta> exit
+```
+
 ---
 
-## 4. Binary Payload Structure (Version 2 Specification)
+## Summary of CLI Commands
+
+| Command | Purpose | Example Syntax |
+|---|---|---|
+| `hide` | Encrypt & embed secret payload into PNG carrier | `crypta hide cover.png secret.txt stego.png` |
+| `extract` | Extract & decrypt payload from stego carrier | `crypta extract stego.png -o output.txt` |
+| `analyze` | Run statistical steganalysis & risk assessment | `crypta analyze image.png [--visualize]` |
+| `info` | Collect forensic evidence & inspect image metadata | `crypta info image.png` |
+| `report` | Generate standalone HTML and JSON report files | `crypta report image.png [--format html\|json\|both]` |
+| `capacity` | Calculate maximum byte capacity of carrier PNG | `crypta capacity cover.png` |
+
+---
+
+## Security Architecture & Binary Framing
+
+### Crypta Version 2 Binary Framing Header
+
+Payloads embedded by Crypta are wrapped in a Version 2 binary framing structure prior to LSB embedding:
 
 ```text
 +-----------------------+---------------------+
@@ -200,34 +180,52 @@ python -m crypta capacity cover.png
 +-----------------------+---------------------+
 ```
 
----
+### Security & Integrity Controls
 
-## 5. Available Commands
-
-| Command | Purpose | Example |
-|---|---|---|
-| `hide` | Encrypt & hide a file inside a PNG carrier image | `python -m crypta hide cover.png secret.pdf stego.png` |
-| `extract` | Extract & decrypt a hidden file from a stego PNG image | `python -m crypta extract stego.png -o recovered/` |
-| `capacity` | Calculate image hiding capacity | `python -m crypta capacity cover.png` |
-| `info` | Display image and file information | `python -m crypta info image.png` |
-| `analyze` | Perform statistical steganalysis | `python -m crypta analyze suspicious.png` |
-| `report` | Generate analysis report | `python -m crypta report suspicious.png --format html` |
+* **Confidentiality:** Payload data is unreadable without the correct secret password.
+* **Authenticity & Integrity:** 128-bit AES-GCM authentication tags combined with embedded SHA-256 plaintext digests ensure that modified ciphertext or incorrect passwords trigger controlled authentication failures.
+* **Transactional Safety:** Output files are created atomically. If decryption or integrity verification fails, no partial or corrupted files are written to disk.
+* **Carrier Immutability:** Original carrier images are opened in read-only mode and preserved untouched.
 
 ---
 
-## 6. Development Roadmap
+## Running Automated Unit Tests
 
-- [x] **Feature 1:** CLI Foundation & Visual Design System (Interactive Shell `crypta>`)
-- [x] **Feature 2:** Image Validation & Capacity Calculation Engine
+Crypta includes a test suite covering all modules:
+
+```bash
+python -m pytest
+```
+
+Run test suite with verbose output:
+```bash
+python -m pytest -v
+```
+
+---
+
+## Development Roadmap
+
+- [x] **Feature 1:** CLI Foundation, Styling System & Interactive Shell (`crypta>`)
+- [x] **Feature 2:** PNG Carrier Validation & Capacity Calculation Engine
 - [x] **Feature 3:** PNG LSB Steganography Encoder & Decoder (Binary Framing & Alpha Preservation)
-- [x] **Feature 4:** Core Cryptography Pipeline (Argon2id + AES-256-GCM Payload Encryption)
-- [x] **Feature 5:** Secure Hide/Extract Orchestration Pipeline
+- [x] **Feature 4:** AES-256-GCM Encryption + Argon2id Key Derivation Layer
+- [x] **Feature 5:** Secure Hide/Extract Orchestration Pipeline Core
 - [x] **Feature 6:** Steganalysis Engine (Entropy, LSB, Chi-Square, Histogram, Pixel Statistics)
 - [x] **Feature 7:** Forensics & Evidence Collection Engine (`crypta info`, SHA-256, PNG IHDR, Metadata)
 - [x] **Feature 8:** Steganalysis Risk Engine (0–100 Risk Score & Explainable Assessment)
 - [x] **Feature 9:** Forensic Report Generation Engine (Standalone HTML & Machine-Readable JSON)
 
+---
 
+## Disclaimer & Responsible Use
 
+> [!IMPORTANT]
+> **Heuristic Assessment Disclaimer:**
+> The Crypta risk score is a heuristic statistical assessment. A high risk score indicates that observed statistical characteristics are consistent with steganographic modification, but it does **not** constitute absolute proof of hidden data.
 
+---
 
+## License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
