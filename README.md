@@ -163,22 +163,17 @@ crypta> exit
 
 Payloads embedded by Crypta are wrapped in a Version 2 binary framing structure prior to LSB embedding:
 
-```text
-+-----------------------+---------------------+
-| Field                 | Type / Size         |
-+-----------------------+---------------------+
-| Magic Header          | b"CRYPTA\x01" (7B)  |
-| Header Version        | 1 byte (0x02)       |
-| Argon2id Salt         | 16 bytes (Raw)      |
-| AES-GCM Nonce         | 12 bytes (Raw)      |
-| Filename Length       | 2 bytes (!H)        |
-| Filename              | UTF-8 string        |
-| Ciphertext Length     | 8 bytes (!Q)        |
-| AES-256-GCM Ciphertext| Raw Encrypted Bytes |
-| (Includes SHA-256     | (Internal 32B Hash  |
-|  & 16B Auth Tag)      |  + Plaintext + Tag) |
-+-----------------------+---------------------+
-```
+| Field | Type / Size | Description |
+|---|---|---|
+| **Magic Header** | `b"CRYPTA\x01"` (7 Bytes) | Crypta protocol signature identification header |
+| **Header Version** | `1 byte` (`0x02`) | Binary payload frame specification version |
+| **Argon2id Salt** | `16 bytes` (Raw) | Password key derivation salt |
+| **AES-GCM Nonce** | `12 bytes` (Raw) | Authenticated encryption initialization vector |
+| **Filename Length** | `2 bytes` (`!H` uint16) | Length of original payload filename |
+| **Filename** | Variable UTF-8 String | Original sanitized payload filename |
+| **Ciphertext Length** | `8 bytes` (`!Q` uint64) | Total size of encrypted payload container |
+| **AES-256-GCM Ciphertext** | Raw Encrypted Bytes | Encrypted SHA-256 Hash + Payload Data + 16B Tag |
+
 
 ### Security & Integrity Controls
 
