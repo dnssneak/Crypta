@@ -105,11 +105,15 @@ def create_parser() -> argparse.ArgumentParser:
     analyze_parser = subparsers.add_parser(
         "analyze",
         help="Perform steganalysis",
-        description="Perform comprehensive statistical steganalysis (Entropy, LSB distribution, Chi-Square, Histogram) and calculate risk score.",
+        description="Perform comprehensive statistical steganalysis (Entropy, LSB distribution, Chi-Square, Histogram, Pixel statistics).",
         add_help=False,
     )
     analyze_parser.add_argument("image", nargs="?", help="Path to image file to analyze")
+    analyze_parser.add_argument(
+        "-g", "--visualize", "--graph", action="store_true", help="Generate and save visual steganalysis charts"
+    )
     analyze_parser.add_argument("-h", "--help", action="store_true", help="Show help for analyze command")
+
 
     # Command: REPORT
     report_parser = subparsers.add_parser(
@@ -229,16 +233,21 @@ def show_command_help(command: str) -> None:
 
     elif command == "analyze":
         print("Description:")
-        print("    Perform statistical steganalysis (Entropy, LSB, Chi-Square, Histogram) and compute risk score.")
+        print("    Perform statistical steganalysis (Entropy, LSB, Chi-Square, Histogram, Pixel statistics).")
         print()
         print(heading("Usage:"))
-        print("    crypta analyze <image_path>")
+        print("    crypta analyze <image_path> [--visualize]")
         print()
         print(heading("Arguments:"))
         print("    image_path       Path to image file to analyze")
         print()
+        print(heading("Options:"))
+        print("    -g, --visualize  Generate and save visual steganalysis charts PNG")
+        print()
         print(heading("Example:"))
         print("    crypta analyze suspicious.png")
+        print("    crypta analyze suspicious.png --visualize")
+
 
     elif command == "report":
         print("Description:")

@@ -22,6 +22,8 @@ from crypta.core import (
     OutputCollisionError,
 )
 from crypta.cryptography import CryptaError, AuthenticationError, DecryptionError, EncryptionError
+from crypta.steganalysis import analyze_image
+
 
 
 def handle_hide(args: Namespace) -> int:
@@ -265,11 +267,111 @@ def handle_info(args: Namespace) -> int:
 
 def handle_analyze(args: Namespace) -> int:
     """Handler for the 'analyze' command."""
-    print(info("Analyze command initialized."))
-    if hasattr(args, "image") and args.image:
-        print(muted(f"    Target image: {args.image}"))
-    print(warning("Statistical steganalysis will be implemented in Feature 5."))
+    if not hasattr(args, "image") or not args.image:
+        print(error("Missing required argument: image path to analyze."))
+        print(muted("Usage: crypta analyze <image_path> [--visualize]"))
+        return 1
+
+    image_path = args.image
+    do_visualize = getattr(args, "visualize", False)
+
+    print(info("Starting steganalysis..."))
+
+    try:
+        res = analyze_image(image_path, visualize=do_visualize)
+    except FileNotFoundError as err:
+        print(error(f"Target image not found: {image_path}"))
+        return 1
+    except ValueError as err:
+        print(error(str(err)))
+        return 1
+    except Exception as err:
+        print(error("Stegananalysis failed."))
+        print(muted(f"Diagnostic error: {err}"))
+        return 1
+
+    info_meta = res.image_info
+
+    print(success("Carrier validated"))
+    print(success("PNG image detected"))
+    ch_str = ", ".join(info_meta.analyzed_channels)
+    print(success(f"{ch_str} channels selected"))
+    if info_meta.alpha_excluded:
+        print(muted("  (Alpha channel excluded from LSB analysis)"))
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("Image Analysis"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  File       : {info_meta.file_name}")
+    print(f"  Dimensions : {info_meta.dimensions_str}")
+    print(f"  Mode       : {info_meta.mode}")
+    print(f"  Channels   : {info_meta.channels}")
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("Entropy Analysis"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  Overall : {res.entropy.overall_entropy:.2f} / 8.00")
+    for ch in info_meta.analyzed_channels:
+        e_val = res.entropy.per_channel_entropy.get(ch, 0.0)
+        print(f"  {ch:<7} : {e_val:.2f}")
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("LSB Distribution"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  {'Channel':<10} {'0-bit':<10} {'1-bit':<10} {'Deviation':<10}")
+    for ch in info_meta.analyzed_channels:
+        p0 = res.lsb_analysis.zero_percentages.get(ch, 0.0)
+        p1 = res.lsb_analysis.one_percentages.get(ch, 0.0)
+        dev = res.lsb_analysis.deviations.get(ch, 0.0)
+        print(f"  {ch:<10} {p0:>5.1f}%     {p1:>5.1f}%     {dev:>5.1f}%")
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("Chi-Square Analysis"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  {'Channel':<10} {'Statistic':<12} {'DoF':<8} {'p-value':<10}")
+    for ch in info_meta.analyzed_channels:
+        stat = res.chi_square.statistics.get(ch, 0.0)
+        dof = res.chi_square.degrees_of_freedom.get(ch, 0)
+        pval = res.chi_square.p_values.get(ch)
+        pval_str = f"{pval:.6f}" if pval is not None else "N/A"
+        print(f"  {ch:<10} {stat:<12.2f} {dof:<8} {pval_str:<10}")
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("Histogram / Pixel Analysis"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  {'Channel':<8} {'Min':<6} {'Max':<6} {'Mean':<8} {'Median':<8} {'Std Dev':<8} {'Unique':<8} {'LSB Trans':<10}")
+    for ch in info_meta.analyzed_channels:
+        st = res.histogram.channel_stats.get(ch, {})
+        u_val = res.pixel_statistics.unique_values.get(ch, 0)
+        t_freq = res.pixel_statistics.lsb_transition_frequencies.get(ch, 0.0)
+        print(
+            f"  {ch:<8} {st.get('min', 0):<6.0f} {st.get('max', 0):<6.0f} "
+            f"{st.get('mean', 0.0):<8.2f} {st.get('median', 0.0):<8.2f} "
+            f"{st.get('std_dev', 0.0):<8.2f} {u_val:<8} {t_freq * 100:>5.1f}%"
+        )
+    print()
+
+    print(heading("────────────────────────────────────────"))
+    print(heading("Assessment Observations"))
+    print(heading("────────────────────────────────────────"))
+    print(f"  Entropy           : {res.entropy.observation}")
+    print(f"  LSB Balance       : {res.lsb_analysis.observation}")
+    print(f"  Statistical Test  : {res.chi_square.observation}")
+    print(f"  Histogram Pattern : {res.histogram.observation}")
+    print(f"  Spatial Dynamics  : {res.pixel_statistics.observation}")
+    print()
+    print("  Overall:")
+    print("  Statistical indicators collected. Risk scoring is performed by Feature 8.")
+    print()
+
+    print(success("Analysis completed"))
     return 0
+
 
 
 def handle_report(args: Namespace) -> int:

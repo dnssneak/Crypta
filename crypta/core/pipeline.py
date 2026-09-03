@@ -21,7 +21,8 @@ from crypta.utils.constants import (
     SALT_SIZE_BYTES,
     NONCE_SIZE_BYTES,
 )
-from crypta.utils.validators import validate_file_exists, ensure_output_directory
+from crypta.utils.validators import validate_file_exists, ensure_output_directory, normalize_user_path
+
 from crypta.steganography.validators import validate_carrier_image
 from crypta.steganography.capacity import check_payload_fit, format_size_bytes, calculate_usable_capacity_bytes
 from crypta.steganography.payload import pack_payload, unpack_payload, calculate_framed_overhead
@@ -91,7 +92,12 @@ def hide_file(
     if secret_p.is_dir():
         raise ValueError("Secret payload path cannot be a directory.")
 
-    out_p = Path(output_path)
+    out_p = normalize_user_path(output_path)
+    if out_p.is_dir():
+        out_p = out_p / f"stego_{carrier.path.name}"
+    elif out_p.suffix.lower() != ".png":
+        out_p = out_p.with_suffix(".png")
+
     if out_p.resolve() == carrier.path.resolve():
         raise ValueError("Output image path cannot be identical to the carrier image.")
 
@@ -100,6 +106,7 @@ def hide_file(
         raise OutputCollisionError(f"Output file already exists: {out_p.name}")
 
     ensure_output_directory(out_p)
+
 
     # 4. Read File & Calculate SHA-256 Digest
     raw_payload_bytes = secret_p.read_bytes()

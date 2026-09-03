@@ -1,7 +1,7 @@
 # Crypta — Steganography, Cryptography & Steganalysis Toolkit
 
 **Version:** 1.0.0  
-**Status:** In Development (Feature 5 Complete)  
+**Status:** In Development (Feature 6 Complete)  
 **Primary Platform:** Kali Linux  
 **Supported Platforms:** Linux & Windows Terminal  
 **Language:** Python 3  
@@ -13,6 +13,7 @@
 **Crypta** is a command-line cybersecurity toolkit designed to securely hide sensitive payload files inside digital PNG images and conduct statistical steganalysis on suspicious media files.
 
 Crypta integrates:
+* **Steganalysis Engine (Feature 6):** Comprehensive analytical pipeline (`crypta/steganalysis/`) evaluating Shannon entropy, LSB 0/1 distributions, Pairs of Values Chi-Square test statistics, histogram frequency pairing, and spatial pixel transition dynamics.
 * **Secure Pipeline Core (Feature 5):** Orchestrated hide/extract workflow (`crypta/core/pipeline.py`) featuring transactional atomic output creation, capacity fit check, SHA-256 plaintext integrity validation, path traversal filename sanitization, and output collision checks.
 * **Core Cryptography Layer (Feature 4):** AES-256-GCM authenticated encryption with SHA-256 integrity digest and Argon2id password-based key derivation.
 * **LSB Steganography (Feature 3):** Spatial-domain 1-bit-per-channel LSB embedding and extraction for PNG carrier images (RGB and RGBA with Alpha channel preservation).
@@ -21,7 +22,29 @@ Crypta integrates:
 
 ---
 
-## 2. Pipeline & Security Architecture
+## 2. Steganalysis Engine
+
+Crypta includes a statistical steganalysis engine (`crypta analyze <image_path>`) to evaluate PNG carrier images (RGB and RGBA) for statistical indicators associated with LSB steganography:
+
+* **Entropy Analysis:** Global and per-channel Shannon entropy calculation ($0.0 \le H \le 8.0$).
+* **LSB Distribution Analysis:** Bitwise 0-bit vs 1-bit counts, percentages, and absolute percentage deviation from ideal 50/50 balance.
+* **Chi-Square Analysis:** Pairs of Values (PoVs $2k$ vs $2k+1$) Chi-Square test statistic, degrees of freedom, and p-value derivation.
+* **Histogram Analysis:** Intensity bounds (min/max), mean, median, standard deviation, and adjacent pair differential ratios.
+* **Pixel Statistics:** Unique value counts per channel and spatial raster LSB transition frequency.
+
+These metrics represent **heuristic statistical indicators**.
+
+> Steganalysis cannot guarantee detection of hidden information from these metrics alone. Natural image characteristics can produce similar statistical patterns, so the results should be interpreted as indicators rather than proof.
+
+Optional visual chart generation is supported:
+```bash
+crypta analyze suspicious.png --visualize
+```
+
+---
+
+## 3. Pipeline & Security Architecture
+
 
 ### Hide Pipeline Architecture
 ```text
@@ -136,5 +159,7 @@ python -m crypta capacity cover.png
 - [x] **Feature 3:** PNG LSB Steganography Encoder & Decoder (Binary Framing & Alpha Preservation)
 - [x] **Feature 4:** Core Cryptography Pipeline (Argon2id + AES-256-GCM Payload Encryption)
 - [x] **Feature 5:** Secure Hide/Extract Orchestration Pipeline
-- [ ] **Feature 6:** Report Generation Engine (HTML/JSON)
+- [x] **Feature 6:** Steganalysis Engine (Entropy, LSB, Chi-Square, Histogram, Pixel Statistics)
+- [ ] **Feature 7:** Forensic Report Generation Engine (HTML/JSON)
+
 
