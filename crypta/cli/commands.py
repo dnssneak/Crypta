@@ -437,21 +437,58 @@ def handle_analyze(args: Namespace) -> int:
         )
     print()
 
-    print(heading("────────────────────────────────────────"))
-    print(heading("Assessment Observations"))
-    print(heading("────────────────────────────────────────"))
-    print(f"  Entropy           : {res.entropy.observation}")
-    print(f"  LSB Balance       : {res.lsb_analysis.observation}")
-    print(f"  Statistical Test  : {res.chi_square.observation}")
-    print(f"  Histogram Pattern : {res.histogram.observation}")
-    print(f"  Spatial Dynamics  : {res.pixel_statistics.observation}")
-    print()
-    print("  Overall:")
-    print("  Statistical indicators collected. Risk scoring is performed by Feature 8.")
-    print()
+    if res.risk_assessment:
+        ra = res.risk_assessment
+        print(heading("────────────────────────────────────────"))
+        print(heading("Risk Assessment"))
+        print(heading("────────────────────────────────────────"))
+
+        if ra.level == "LOW":
+            lvl_str = success(ra.level)
+        elif ra.level == "MODERATE":
+            lvl_str = warning(ra.level)
+        else:
+            lvl_str = error(ra.level)
+
+        print(f"  Risk Score       : {ra.score}/100")
+        print(f"  Risk Level       : {lvl_str}")
+        print()
+
+        print(heading("Indicators"))
+        print(heading("────────────────────────────────────────"))
+        print(f"  Entropy          : {ra.indicator_scores.get('entropy', 0.0):>5.1f}/100 (Weight: {ra.weights.get('entropy', 0.1):.0%})")
+        print(f"  LSB Distribution : {ra.indicator_scores.get('lsb', 0.0):>5.1f}/100 (Weight: {ra.weights.get('lsb', 0.3):.0%})")
+        print(f"  Chi-Square       : {ra.indicator_scores.get('chi_square', 0.0):>5.1f}/100 (Weight: {ra.weights.get('chi_square', 0.3):.0%})")
+        print(f"  Histogram        : {ra.indicator_scores.get('histogram', 0.0):>5.1f}/100 (Weight: {ra.weights.get('histogram', 0.2):.0%})")
+        print(f"  Pixel Statistics : {ra.indicator_scores.get('pixel_statistics', 0.0):>5.1f}/100 (Weight: {ra.weights.get('pixel_statistics', 0.1):.0%})")
+        print()
+
+        if ra.observations:
+            print(heading("Key Observations"))
+            print(heading("────────────────────────────────────────"))
+            for obs in ra.observations:
+                if obs.startswith("[!] "):
+                    print(f"  {warning(obs[4:])}")
+                elif obs.startswith("[!]"):
+                    print(f"  {warning(obs[3:])}")
+                else:
+                    print(f"  • {obs}")
+            print()
+
+        print(heading("Assessment"))
+        print(heading("────────────────────────────────────────"))
+        for line in ra.assessment.split("\n"):
+            if line.startswith("[!] "):
+                print(f"  {warning(line[4:])}")
+            elif line.startswith("[!]"):
+                print(f"  {warning(line[3:])}")
+            elif line:
+                print(f"  {line}")
+        print()
 
     print(success("Analysis completed"))
     return 0
+
 
 
 

@@ -10,6 +10,7 @@ from crypta.steganalysis.results import (
     ChiSquareResult,
     HistogramResult,
     PixelStatsResult,
+    RiskAssessment,
     AnalysisResult,
 )
 from crypta.steganalysis.entropy import analyze_entropy, calculate_shannon_entropy
@@ -18,11 +19,17 @@ from crypta.steganalysis.chi_square import analyze_chi_square
 from crypta.steganalysis.histogram import analyze_histogram
 from crypta.steganalysis.pixel_analysis import analyze_pixels
 from crypta.steganalysis.visualizer import generate_analysis_charts
+from crypta.steganalysis.risk_score import calculate_risk_score, get_risk_level
+from crypta.steganalysis.assessment import generate_observations
 from crypta.steganalysis.analyzer import analyze_image
 
 __all__ = [
     "analyze_image",
+    "calculate_risk_score",
+    "get_risk_level",
+    "generate_observations",
     "AnalysisResult",
+    "RiskAssessment",
     "ImageInfo",
     "EntropyResult",
     "LSBResult",
@@ -37,3 +44,4 @@ __all__ = [
     "analyze_pixels",
     "generate_analysis_charts",
 ]
+

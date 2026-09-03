@@ -61,6 +61,31 @@ crypta analyze suspicious.png --visualize
 
 ---
 
+## 4. Steganalysis Risk Engine
+
+Crypta combines several statistical indicators from Feature 6 into an explainable, deterministic **0–100 steganography risk score** (`crypta analyze <image>`):
+
+* **LSB Distribution (30% weight)**: Evaluates 0/1 bit balance and deviation from 50% ideal random state.
+* **Chi-Square (30% weight)**: Evaluates Pairs of Values (PoV) p-value for LSB replacement testing.
+* **Histogram (20% weight)**: Evaluates adjacent intensity pair ratios for PoV flattening.
+* **Entropy (10% weight)**: Evaluates Shannon entropy per channel and channel-to-channel variance.
+* **Pixel Statistics (10% weight)**: Evaluates LSB transition frequency alignment near 0.50.
+
+### Risk Level Classifications
+```text
+ 0–29   : LOW
+30–59   : MODERATE
+60–79   : HIGH
+80–100  : VERY HIGH
+```
+
+> [!IMPORTANT]
+> **Heuristic Assessment Disclaimer:**
+> The Crypta risk score is a heuristic statistical assessment. A high score indicates that multiple observed characteristics are statistically consistent with steganographic modification, but it does **not** prove that hidden information exists.
+
+
+---
+
 ## 3. Pipeline & Security Architecture
 
 
@@ -179,8 +204,9 @@ python -m crypta capacity cover.png
 - [x] **Feature 5:** Secure Hide/Extract Orchestration Pipeline
 - [x] **Feature 6:** Steganalysis Engine (Entropy, LSB, Chi-Square, Histogram, Pixel Statistics)
 - [x] **Feature 7:** Forensics & Evidence Collection Engine (`crypta info`, SHA-256, PNG IHDR, Metadata)
-- [ ] **Feature 8:** Steganalysis Risk Engine (0-100 Risk Score)
+- [x] **Feature 8:** Steganalysis Risk Engine (0–100 Risk Score & Explainable Assessment)
 - [ ] **Feature 9:** Forensic Report Generation Engine (HTML/JSON)
+
 
 
 

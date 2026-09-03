@@ -111,6 +111,22 @@ class PixelStatsResult:
 
 
 @dataclass
+class RiskAssessment:
+    """Structured result for steganography risk scoring and assessment."""
+
+    score: int
+    level: str
+    indicator_scores: Dict[str, float]
+    weights: Dict[str, float]
+    observations: List[str] = field(default_factory=list)
+    assessment: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert object to serializable dictionary."""
+        return asdict(self)
+
+
+@dataclass
 class AnalysisResult:
     """Master container aggregating all steganalysis results for an image."""
 
@@ -120,6 +136,7 @@ class AnalysisResult:
     chi_square: ChiSquareResult
     histogram: HistogramResult
     pixel_statistics: PixelStatsResult
+    risk_assessment: Optional[RiskAssessment] = None
     observations: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -131,5 +148,7 @@ class AnalysisResult:
             "chi_square": self.chi_square.to_dict(),
             "histogram": self.histogram.to_dict(),
             "pixel_statistics": self.pixel_statistics.to_dict(),
+            "risk_assessment": self.risk_assessment.to_dict() if self.risk_assessment else None,
             "observations": self.observations,
         }
+

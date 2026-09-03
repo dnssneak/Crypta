@@ -16,6 +16,7 @@ from crypta.steganalysis.chi_square import analyze_chi_square
 from crypta.steganalysis.histogram import analyze_histogram
 from crypta.steganalysis.pixel_analysis import analyze_pixels
 from crypta.steganalysis.visualizer import generate_analysis_charts
+from crypta.steganalysis.risk_score import calculate_risk_score
 
 
 def analyze_image(
@@ -96,9 +97,14 @@ def analyze_image(
         observations=observations,
     )
 
-    # 6. Generate Visualization if requested
+    # 6. Calculate Risk Score & Assessment (Feature 8)
+    risk_assessment = calculate_risk_score(analysis_result)
+    analysis_result.risk_assessment = risk_assessment
+
+    # 7. Generate Visualization if requested
     if visualize:
         chart_path = generate_analysis_charts(analysis_result, img_array, visualization_output)
         analysis_result.observations.append(f"Analysis chart generated and saved to: {chart_path.name}")
 
     return analysis_result
+
