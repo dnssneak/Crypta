@@ -1,6 +1,6 @@
 """
 Command routing handlers for Crypta CLI commands.
-Integrates AES-256-GCM + Argon2id encryption layer with LSB Steganography.
+Delegates hide and extract operations to crypta.core.pipeline orchestration layer.
 """
 
 import getpass
@@ -13,8 +13,13 @@ from crypta.steganography import (
     calculate_usable_capacity_bytes,
     format_size_bytes,
     DEFAULT_PAYLOAD_OVERHEAD_BYTES,
-    embed_payload,
-    extract_payload,
+)
+from crypta.core import (
+    hide_file,
+    extract_file,
+    CapacityError,
+    CarrierValidationError,
+    OutputCollisionError,
 )
 from crypta.cryptography import CryptaError, AuthenticationError, DecryptionError, EncryptionError
 
@@ -39,8 +44,8 @@ def handle_hide(args: Namespace) -> int:
     output_path = args.output
 
     try:
-        password = getpass.getpass("Enter password: ")
-        confirm_password = getpass.getpass("Confirm password: ")
+        password = getpass.getpass("Enter encryption password: ")
+        confirm_password = getpass.getpass("Confirm encryption password: ")
     except (KeyboardInterrupt, EOFError):
         print()
         print(error("Operation cancelled by user."))
@@ -54,12 +59,26 @@ def handle_hide(args: Namespace) -> int:
         print(error("Password cannot be empty."))
         return 1
 
-    print(success("Password accepted"))
-    print(success("Encryption initialized"))
-    print(info("Encrypting payload..."))
+    print(info("Preparing secure steganographic operation..."))
 
     try:
-        out_file = embed_payload(carrier_path, secret_path, output_path, password=password)
+        res = hide_file(
+            carrier_path=carrier_path,
+            secret_path=secret_path,
+            output_path=output_path,
+            password=password,
+            overwrite=True,
+        )
+    except CapacityError as err:
+        print(error("Insufficient carrier capacity."))
+        print(muted(str(err)))
+        return 1
+    except OutputCollisionError as err:
+        print(error(str(err)))
+        return 1
+    except CarrierValidationError as err:
+        print(error(str(err)))
+        return 1
     except FileNotFoundError as err:
         print(error(str(err)))
         return 1
@@ -78,25 +97,32 @@ def handle_hide(args: Namespace) -> int:
         print(muted(f"Diagnostic error: {err}"))
         return 1
 
-    carrier_name = Path(carrier_path).name
-    secret_name = Path(secret_path).name
-    payload_size = Path(secret_path).stat().st_size
-
+    print(success("Carrier validated"))
+    print(success("Payload file validated"))
+    print(success("Capacity check passed"))
+    print(info("Calculating file integrity..."))
+    print(success(f"SHA-256 calculated: {res.sha256_hash[:16]}..."))
+    print(info("Deriving encryption key..."))
+    print(success("Encryption initialized"))
+    print(info("Encrypting payload..."))
     print(success("Payload encrypted"))
-    print(info("Embedding encrypted payload..."))
+    print(info("Building Crypta payload..."))
+    print(success("Payload prepared"))
+    print(info("Embedding payload..."))
     print(success("Payload embedded successfully"))
     print()
 
     print(heading("----------------------------------------------------"))
     print(heading("Steganography Result"))
     print(heading("----------------------------------------------------"))
-    print(f"  Carrier : {carrier_name}")
-    print(f"  Payload : {secret_name}")
-    print(f"  Output  : {out_file.name}")
-    print(f"  Size    : {format_size_bytes(payload_size)}")
+    print(f"  Carrier       : {res.carrier_path.name}")
+    print(f"  Payload       : {res.secret_path.name}")
+    print(f"  Output        : {res.output_path.name}")
+    print(f"  Original Size : {format_size_bytes(res.original_size_bytes)}")
+    print(f"  Payload Size  : {format_size_bytes(res.serialized_size_bytes)}")
     print()
 
-    print(success("Stego image created successfully"))
+    print(success("Secure stego image created successfully"))
     return 0
 
 
@@ -111,7 +137,7 @@ def handle_extract(args: Namespace) -> int:
     output_dest = getattr(args, "output", None)
 
     try:
-        password = getpass.getpass("Enter password: ")
+        password = getpass.getpass("Enter decryption password: ")
     except (KeyboardInterrupt, EOFError):
         print()
         print(error("Operation cancelled by user."))
@@ -122,17 +148,25 @@ def handle_extract(args: Namespace) -> int:
         return 1
 
     print(info(f"Inspecting stego image '{Path(stego_image).name}'..."))
-    print(info("Extracting payload..."))
 
     try:
-        out_path, restored_filename, payload_size = extract_payload(
-            stego_image, password=password, output_destination=output_dest
+        res = extract_file(
+            stego_path=stego_image,
+            password=password,
+            output_destination=output_dest,
+            overwrite=True,
         )
-    except FileNotFoundError as err:
-        print(error(str(err)))
-        return 1
     except (AuthenticationError, DecryptionError):
         print(error("Decryption failed: invalid password or corrupted payload"))
+        return 1
+    except OutputCollisionError as err:
+        print(error(str(err)))
+        return 1
+    except CarrierValidationError as err:
+        print(error(str(err)))
+        return 1
+    except FileNotFoundError as err:
+        print(error(str(err)))
         return 1
     except ValueError as err:
         print(error(str(err)))
@@ -145,19 +179,22 @@ def handle_extract(args: Namespace) -> int:
         print(muted(f"Diagnostic error: {err}"))
         return 1
 
+    print(success("Carrier validated"))
+    print(info("Extracting Crypta payload..."))
     print(success("Crypta payload detected"))
     print(info("Deriving encryption key..."))
     print(info("Decrypting payload..."))
     print(success("Authentication successful"))
-    print(success("File integrity verified"))
+    print(info("Verifying file integrity..."))
+    print(success(f"SHA-256 verified: {res.sha256_hash[:16]}..."))
     print()
 
     print(heading("----------------------------------------------------"))
     print(heading("Extraction Result"))
     print(heading("----------------------------------------------------"))
-    print(f"  Filename : {restored_filename}")
-    print(f"  Size     : {format_size_bytes(payload_size)}")
-    print(f"  Output   : {out_path}")
+    print(f"  Filename : {res.restored_filename}")
+    print(f"  Size     : {format_size_bytes(res.recovered_size_bytes)}")
+    print(f"  Output   : {res.output_path}")
     print()
 
     print(success("File recovered successfully"))
