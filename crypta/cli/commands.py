@@ -24,6 +24,8 @@ from crypta.core import (
 from crypta.cryptography import CryptaError, AuthenticationError, DecryptionError, EncryptionError
 from crypta.steganalysis import analyze_image
 from crypta.forensics import analyze_forensics
+from crypta.reporting import build_report
+
 
 
 
@@ -494,10 +496,44 @@ def handle_analyze(args: Namespace) -> int:
 
 def handle_report(args: Namespace) -> int:
     """Handler for the 'report' command."""
-    print(info("Report command initialized."))
-    if hasattr(args, "image") and args.image:
-        print(muted(f"    Target image: {args.image}"))
-    if hasattr(args, "format") and args.format:
-        print(muted(f"    Report format: {args.format}"))
-    print(warning("Forensic report generation will be implemented in Feature 6."))
+    if not hasattr(args, "image") or not args.image:
+        print(error("Missing required argument: image path for report generation."))
+        print(muted("Usage: crypta report <image_path> [--format html|json|both] [--output <dir>]"))
+        return 1
+
+    image_path = args.image
+    format_choice = getattr(args, "format", "both") or "both"
+    output_dir = getattr(args, "output", None)
+
+    print(info("Initializing report generator..."))
+    print(info(f"Target image  : {image_path}"))
+    print(info(f"Report format : {format_choice}"))
+    print()
+
+    try:
+        print(info("Running forensic analysis & steganalysis..."))
+        generated_files = build_report(
+            image_path=image_path,
+            output_dir=output_dir,
+            format_choice=format_choice,
+        )
+    except FileNotFoundError as err:
+        print(error(f"Target image not found: {image_path}"))
+        return 1
+    except ValueError as err:
+        print(error(str(err)))
+        return 1
+    except Exception as err:
+        print(error("Report generation failed."))
+        print(muted(f"Diagnostic error: {err}"))
+        return 1
+
+    print()
+    if "html" in generated_files:
+        print(success(f"HTML report generated: {generated_files['html']}"))
+    if "json" in generated_files:
+        print(success(f"JSON report generated: {generated_files['json']}"))
+    print()
+    print(success("Report generation complete"))
     return 0
+

@@ -83,6 +83,26 @@ Crypta combines several statistical indicators from Feature 6 into an explainabl
 > **Heuristic Assessment Disclaimer:**
 > The Crypta risk score is a heuristic statistical assessment. A high score indicates that multiple observed characteristics are statistically consistent with steganographic modification, but it does **not** prove that hidden information exists.
 
+---
+
+## 5. Forensic Report Generation Engine
+
+Crypta generates standalone **HTML** and machine-readable **JSON** forensic reports (`crypta report <image>`):
+
+* **Standalone HTML Reports:** Self-contained single-file HTML report with embedded CSS styling. Requires no external dependencies, web servers, or internet connection (100% offline).
+* **JSON Reports:** Structured, indented JSON export (`indent=2`) for programmatic SIEM, incident response, or automated analysis pipelines.
+* **XSS & Injection Protection:** Strict HTML escaping (`html.escape`) applied to all image metadata, filenames, paths, and observation strings.
+* **Unified Evidence View:** Consolidates Forensic evidence (Feature 7), Steganalysis metrics (Feature 6), and Risk Assessment (Feature 8) with prominent risk gauges and progress bars.
+
+```bash
+# Generate both HTML and JSON reports by default
+crypta report suspicious.png
+
+# Generate specific format to custom output directory
+crypta report suspicious.png --format html --output-dir /path/to/reports/
+```
+
+
 
 ---
 
@@ -205,7 +225,8 @@ python -m crypta capacity cover.png
 - [x] **Feature 6:** Steganalysis Engine (Entropy, LSB, Chi-Square, Histogram, Pixel Statistics)
 - [x] **Feature 7:** Forensics & Evidence Collection Engine (`crypta info`, SHA-256, PNG IHDR, Metadata)
 - [x] **Feature 8:** Steganalysis Risk Engine (0–100 Risk Score & Explainable Assessment)
-- [ ] **Feature 9:** Forensic Report Generation Engine (HTML/JSON)
+- [x] **Feature 9:** Forensic Report Generation Engine (Standalone HTML & Machine-Readable JSON)
+
 
 
 

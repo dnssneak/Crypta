@@ -124,10 +124,11 @@ def create_parser() -> argparse.ArgumentParser:
     )
     report_parser.add_argument("image", nargs="?", help="Path to image file to generate report for")
     report_parser.add_argument(
-        "-f", "--format", choices=["html", "json", "all"], default="html", help="Report format (default: html)"
+        "-f", "--format", choices=["html", "json", "both", "all"], default="both", help="Report format: 'html', 'json', or 'both' (default: both)"
     )
-    report_parser.add_argument("-o", "--output-dir", help="Directory path to save report output")
+    report_parser.add_argument("-o", "--output", "--output-dir", dest="output", help="Directory path to save report output")
     report_parser.add_argument("-h", "--help", action="store_true", help="Show help for report command")
+
 
     return parser
 
@@ -251,7 +252,7 @@ def show_command_help(command: str) -> None:
 
     elif command == "report":
         print("Description:")
-        print("    Generate machine-readable JSON or human-readable HTML forensic analysis reports.")
+        print("    Generate machine-readable JSON and human-readable HTML forensic analysis reports.")
         print()
         print(heading("Usage:"))
         print("    crypta report <image_path> [-f <format>] [-o <output_dir>]")
@@ -260,11 +261,12 @@ def show_command_help(command: str) -> None:
         print("    image_path       Path to image file to report on")
         print()
         print(heading("Options:"))
-        print("    -f, --format     Report format: 'html', 'json', or 'all' (default: html)")
-        print("    -o, --output-dir Save location directory for report files")
+        print("    -f, --format     Report format: 'html', 'json', or 'both' (default: both)")
+        print("    -o, --output     Save location directory for report files")
         print()
         print(heading("Example:"))
         print("    crypta report suspicious.png --format html")
+
 
     print()
 
